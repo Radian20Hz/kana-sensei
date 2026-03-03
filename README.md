@@ -169,9 +169,9 @@ Continuous improvement is core to this project — inspired by the Japanese prin
 **Wiktor Waryszak**
 MEXT Scholarship Applicant 2028
 
-[![Portfolio](https://img.shields.io/badge/Portfolio-waryszak.dev-bc002d?style=flat-square)](https://portfolio-8cbmts5em-wikok9014-4871s-projects.vercel.app/)
+[![Portfolio](https://img.shields.io/badge/Portfolio-bc002d?style=flat-square)](https://portfolio-8cbmts5em-wikok9014-4871s-projects.vercel.app/)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-wiktorwaryszak-0077b5?style=flat-square)](https://www.linkedin.com/in/wiktor-waryszak-8427613b4/)
-[![GitHub](https://img.shields.io/badge/GitHub-yourusername-1a1008?style=flat-square)](https://github.com/Radian20Hz)
+[![GitHub](https://img.shields.io/badge/GitHub-Radian20Hz-1a1008?style=flat-square)](https://github.com/Radian20Hz)
 
 ---
 
