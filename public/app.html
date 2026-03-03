@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KanaSensei — Training</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f5f0e8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;700;800&family=Noto+Sans+JP:wght@300;400;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+    :root {
+        --ink: #1a1008; --ink-soft: #3d2b1f;
+        --red: #bc002d; --red-dark: #8a001f; --red-pale: #fff0f3;
+        --gold: #b8860b; --gold-pale: #fdf8ec;
+        --paper: #faf6ef; --washi: #f0ead8; --washi-2: #e8dfc8;
+        --mist: #c8bfaa; --border: #d4c9b0;
+        --shadow: 0 4px 24px rgba(26,16,8,.10);
+        --shadow-lg: 0 12px 48px rgba(26,16,8,.16);
+        --green: #2d9e5a; --green-pale: #e8f8ed;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;display:flex;flex-direction:column;background-image:radial-gradient(ellipse at 20% 50%,rgba(184,134,11,.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(188,0,45,.03) 0%,transparent 50%)}
+    .hidden{display:none!important}
+
+    /* NAV */
+    .top-nav{display:flex;justify-content:space-between;align-items:center;padding:0 5%;height:64px;background:rgba(250,246,239,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200}
+    .logo{font-family:'Shippori Mincho',serif;font-size:1.3rem;font-weight:800;letter-spacing:3px;text-decoration:none;color:var(--ink)}
+    .logo span{color:var(--red)}
+    .nav-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    .lang-toggle{display:flex;gap:0}
+    .lang-toggle-btn{background:none;border:1px solid var(--border);color:var(--mist);padding:3px 10px;font-size:0.75rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:700;transition:all .2s}
+    .lang-toggle-btn:first-child{border-radius:4px 0 0 4px}
+    .lang-toggle-btn:last-child{border-radius:0 4px 4px 0;border-left:none}
+    .lang-toggle-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+    #user-streak{font-family:'Shippori Mincho',serif;color:#c45000;font-weight:700;font-size:.9rem}
+    #user-points{font-family:'DM Mono',monospace;font-weight:500;color:var(--red);font-size:.82rem;background:var(--red-pale);padding:3px 10px;border-radius:20px;border:1px solid rgba(188,0,45,.15)}
+    #auth-btn{background:transparent;border:1.5px solid var(--border);padding:.4rem .9rem;border-radius:6px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-size:.78rem;font-weight:700;color:var(--ink-soft);transition:all .2s}
+    #auth-btn:hover{border-color:var(--red);color:var(--red)}
+
+    /* VIEWS */
+    #app-container{flex:1;padding:2.5rem 5%;display:flex;flex-direction:column;align-items:center}
+    .view{display:none;width:100%;max-width:860px;animation:inkFadeIn .3s ease}
+    .view.active{display:block}
+    @keyframes inkFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    /* BACK BTN */
+    .back-btn{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--mist);font-size:.82rem;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:1.75rem;letter-spacing:1px;text-transform:uppercase;transition:color .2s;padding:0}
+    .back-btn::before{content:'←'}
+    .back-btn:hover{color:var(--red)}
+
+    /* DASHBOARD HEADER */
+    .dashboard-header{text-align:center;margin-bottom:2.5rem;position:relative}
+    .dashboard-header::after{content:'名';position:absolute;top:-1rem;left:50%;transform:translateX(-50%);font-family:'Shippori Mincho',serif;font-size:8rem;color:rgba(188,0,45,.04);pointer-events:none;z-index:0;line-height:1}
+    .dashboard-header h1{font-family:'Shippori Mincho',serif;font-size:2rem;font-weight:700;position:relative;z-index:1}
+    .dashboard-header p{color:var(--mist);margin-top:.4rem;font-size:.88rem;position:relative;z-index:1;letter-spacing:1px}
+    #diff-badge{display:inline-block;margin-top:.75rem;font-family:'DM Mono',monospace;font-size:.75rem;background:var(--washi);border:1px solid var(--border);padding:4px 12px;border-radius:20px;color:var(--ink-soft);cursor:pointer;transition:all .2s;position:relative;z-index:1}
+    #diff-badge:hover{border-color:var(--red);color:var(--red)}
+
+    /* SRS STATS */
+    .srs-stats{display:flex;justify-content:center;gap:10px;margin-bottom:2.5rem;flex-wrap:wrap}
+    .stat-box{display:flex;flex-direction:column;align-items:center;padding:12px 20px;border-radius:12px;min-width:90px;border:1.5px solid var(--border);background:white;box-shadow:var(--shadow);transition:transform .2s;cursor:default}
+    .stat-box:hover{transform:translateY(-3px)}
+    .stat-num{font-family:'Shippori Mincho',serif;font-size:1.9rem;font-weight:700;line-height:1}
+    .stat-label{font-size:.68rem;text-transform:uppercase;letter-spacing:2px;margin-top:5px;color:var(--mist)}
+    .box-new .stat-num{color:var(--ink-soft)}
+    .box-review{border-color:rgba(188,0,45,.3);background:var(--red-pale)}
+    .box-review .stat-num{color:var(--red)}
+    .box-mastered{border-color:rgba(184,134,11,.3);background:var(--gold-pale)}
+    .box-mastered .stat-num{color:var(--gold)}
+    .box-chart{cursor:pointer}
+    .box-chart:hover{border-color:var(--red)}
+    @keyframes pulse-red{0%{box-shadow:0 0 0 0 rgba(188,0,45,.4)}70%{box-shadow:0 0 0 12px rgba(188,0,45,0)}100%{box-shadow:0 0 0 0 rgba(188,0,45,0)}}
+
+    /* LEARNING PATH */
+    .learning-path{display:flex;flex-direction:column;align-items:center;gap:0;margin-bottom:2.5rem;position:relative}
+    .learning-path::before{content:'';position:absolute;top:40px;bottom:40px;width:2px;background:linear-gradient(to bottom,var(--border),var(--washi-2),var(--border));z-index:0}
+    .path-node{position:relative;z-index:1;display:flex;align-items:center;gap:18px;cursor:pointer;padding:14px 20px;margin:7px 0;border-radius:14px;transition:all .25s;width:100%;max-width:460px;background:white;border:1.5px solid var(--border);box-shadow:var(--shadow)}
+    .path-node:nth-child(even){align-self:flex-end}
+    .path-node:nth-child(odd){align-self:flex-start}
+    .path-node.unlocked:hover{border-color:var(--red);box-shadow:var(--shadow-lg);transform:translateX(4px)}
+    .path-node:nth-child(even).unlocked:hover{transform:translateX(-4px)}
+    .node-icon{width:52px;height:52px;background:var(--washi);border:1.5px solid var(--border);border-radius:10px;display:flex;justify-content:center;align-items:center;font-family:'Shippori Mincho',serif;font-size:1.6rem;font-weight:700;flex-shrink:0;transition:all .25s}
+    .path-node.unlocked:hover .node-icon{background:var(--red-pale);border-color:var(--red)}
+    .node-text{flex:1}
+    .node-title{font-family:'Shippori Mincho',serif;font-size:1rem;font-weight:700;color:var(--ink);margin-bottom:2px}
+    .node-subtitle{font-size:.74rem;color:var(--mist);letter-spacing:.5px}
+    .node-arrow{color:var(--border);font-size:1rem;transition:color .2s,transform .2s}
+    .path-node.unlocked:hover .node-arrow{color:var(--red);transform:translateX(3px)}
+    .path-node.locked{opacity:.4;cursor:not-allowed;filter:grayscale(60%)}
+    .path-node.locked:hover{transform:none;border-color:var(--border);box-shadow:var(--shadow)}
+    .path-node.locked .node-arrow{display:none}
+
+    /* ACHIEVEMENTS */
+    .achievements-section{margin-bottom:2rem;background:white;padding:1.75rem;border-radius:16px;border:1.5px solid var(--border);box-shadow:var(--shadow);text-align:center}
+    .achievements-section h3{font-family:'Shippori Mincho',serif;font-size:.9rem;font-weight:600;color:var(--mist);letter-spacing:3px;text-transform:uppercase;margin-bottom:1.25rem}
+    .badges-container{display:flex;justify-content:center;flex-wrap:wrap;gap:16px}
+    .badge{text-align:center;transition:.3s}
+    .badge-icon{font-size:2rem;background:var(--washi);width:64px;height:64px;line-height:64px;border-radius:12px;margin:0 auto .5rem;border:1.5px solid var(--border);transition:all .3s}
+    .badge:not(.locked):hover .badge-icon{border-color:var(--gold);background:var(--gold-pale);transform:translateY(-3px);box-shadow:0 8px 20px rgba(184,134,11,.15)}
+    .badge p{font-size:.78rem;font-weight:700;color:var(--ink-soft)}
+    .badge p span{font-size:.7rem;color:var(--mist);font-weight:400;display:block}
+    .badge.locked{filter:grayscale(100%);opacity:.35}
+
+    /* ABOUT */
+    .about-section{background:white;padding:1.75rem;border-radius:16px;border:1.5px solid var(--border);box-shadow:var(--shadow);text-align:center;border-top:3px solid var(--red);margin-bottom:2rem}
+    .about-flag{font-size:2.2rem;margin-bottom:.75rem}
+    .about-section h2{font-family:'Shippori Mincho',serif;font-size:1.2rem;margin-bottom:.6rem}
+    .about-section>p{color:var(--ink-soft);line-height:1.7;font-size:.88rem;max-width:580px;margin:0 auto 1.25rem}
+    .about-features{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:1.25rem}
+    .about-feat{background:var(--washi);border-radius:10px;padding:.75rem .9rem;min-width:110px;font-size:.8rem;border:1px solid var(--border);color:var(--ink-soft);line-height:1.5}
+    .about-feat span{font-size:1.4rem;display:block;margin-bottom:.3rem}
+    .about-feat strong{display:block;color:var(--ink)}
+    .about-links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .about-link{display:inline-block;padding:.5rem 1rem;border-radius:6px;border:1.5px solid var(--border);color:var(--ink-soft);font-size:.8rem;font-weight:700;text-decoration:none;transition:all .2s}
+    .about-link:hover{border-color:var(--red);color:var(--red)}
+
+    /* ========== DIFFICULTY VIEW ========== */
+    .diff-header{text-align:center;margin-bottom:2rem}
+    .diff-header h1{font-family:'Shippori Mincho',serif;font-size:1.8rem;font-weight:700}
+    .diff-header p{color:var(--mist);margin-top:.4rem;font-size:.85rem;letter-spacing:1px}
+    .diff-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:2rem}
+    .diff-card{background:white;border:2px solid var(--border);border-radius:16px;padding:1.5rem;cursor:pointer;transition:all .2s;text-align:center;position:relative;overflow:hidden}
+    .diff-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--border);transition:background .2s}
+    .diff-card:hover{border-color:var(--red);transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+    .diff-card:hover::before{background:var(--red)}
+    .diff-card.selected{border-color:var(--red);box-shadow:0 0 0 3px rgba(188,0,45,.12)}
+    .diff-card.selected::before{background:var(--red)}
+    .diff-emoji{font-size:2.5rem;margin-bottom:.75rem}
+    .diff-name{font-family:'Shippori Mincho',serif;font-size:1.1rem;font-weight:700;margin-bottom:.5rem;color:var(--ink)}
+    .diff-desc{font-size:.78rem;color:var(--mist);line-height:1.6}
+    .diff-badge-d1::before{background:#2d9e5a!important}
+    .diff-badge-d2::before{background:var(--gold)!important}
+    .diff-badge-d3::before{background:var(--red)!important}
+    .diff-badge-d4::before{background:#1a1008!important}
+    .diff-card.selected.diff-badge-d1{border-color:#2d9e5a;box-shadow:0 0 0 3px rgba(45,158,90,.12)}
+    .diff-card.selected.diff-badge-d2{border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,.12)}
+    .diff-card.selected.diff-badge-d4{border-color:var(--ink);box-shadow:0 0 0 3px rgba(26,16,8,.12)}
+
+    /* ========== GAME ARENA ========== */
+    .game-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+    .game-title{font-family:'Shippori Mincho',serif;font-size:.95rem;font-weight:600;color:var(--mist);letter-spacing:2px;text-transform:uppercase}
+    .session-score{font-family:'DM Mono',monospace;font-size:.85rem;color:var(--red);background:var(--red-pale);padding:4px 12px;border-radius:20px;border:1px solid rgba(188,0,45,.2)}
+    .combo-badge{font-family:'Shippori Mincho',serif;font-size:.88rem;font-weight:700;color:#c45000;background:#fff8f0;padding:4px 12px;border-radius:20px;border:1px solid rgba(196,80,0,.2);text-align:center;transition:transform .15s}
+
+    /* Timer bar */
+    .timer-track{width:100%;height:4px;background:var(--washi);border-radius:2px;margin-bottom:1rem;overflow:hidden}
+    #timer-bar{height:100%;background:linear-gradient(to right,var(--green),var(--gold),var(--red));border-radius:2px;width:100%}
+
+    .game-flex-container{display:flex;gap:18px;align-items:stretch}
+    @media(max-width:640px){.game-flex-container{flex-direction:column}.canvas-panel{display:none}}
+    .kana-panel{flex:1;background:white;border-radius:18px;padding:2.5rem 1.75rem 1.75rem;border:1.5px solid var(--border);box-shadow:var(--shadow);text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.25rem;position:relative;overflow:hidden}
+    .kana-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(to right,var(--red),transparent);opacity:.6}
+    #char-display{font-family:'Noto Sans JP',sans-serif;font-size:7rem;line-height:1;color:var(--ink);text-shadow:2px 4px 12px rgba(26,16,8,.12);transition:opacity .12s;filter:drop-shadow(0 2px 4px rgba(26,16,8,.1))}
+    .kana-hint{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--mist);letter-spacing:2px;text-transform:uppercase}
+    .canvas-panel{width:230px;background:white;border-radius:18px;padding:1.25rem;border:1.5px solid var(--border);box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:10px}
+    .canvas-label{font-family:'Shippori Mincho',serif;font-size:.78rem;color:var(--mist);letter-spacing:2px;text-transform:uppercase}
+    #shodo-canvas{background:var(--washi);border:1.5px solid var(--border);border-radius:10px;cursor:crosshair;touch-action:none;width:200px;height:200px;background-image:linear-gradient(rgba(184,134,11,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(184,134,11,.08) 1px,transparent 1px);background-size:40px 40px}
+    input[type="text"]{width:100%;padding:.85rem 1.1rem;font-family:'DM Mono',monospace;font-size:1.35rem;text-align:center;border:2px solid var(--border);border-radius:10px;outline:none;background:var(--washi);color:var(--ink);transition:border-color .25s,background .25s;letter-spacing:2px}
+    input[type="text"]::placeholder{color:var(--mist);font-size:.85rem;letter-spacing:1px}
+    input[type="text"]:focus{border-color:var(--red);background:white;box-shadow:0 0 0 4px rgba(188,0,45,.06)}
+    .primary-btn{background:var(--red);color:white;border:none;padding:.85rem 2rem;font-size:.92rem;font-weight:700;font-family:'Noto Sans JP',sans-serif;border-radius:10px;cursor:pointer;transition:all .2s;letter-spacing:1px}
+    .primary-btn:hover{background:var(--red-dark);transform:translateY(-2px);box-shadow:0 6px 20px rgba(188,0,45,.25)}
+    .secondary-btn{background:transparent;color:var(--ink-soft);border:1.5px solid var(--border);padding:.55rem 1.1rem;border-radius:8px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-size:.8rem;font-weight:700;transition:all .2s}
+    .secondary-btn:hover{border-color:var(--ink-soft);background:var(--washi)}
+    .correct-flash{background:var(--green-pale)!important;border-color:var(--green)!important;color:#1a6038!important}
+    .wrong-shake{background:var(--red-pale)!important;border-color:var(--red)!important;color:var(--red)!important;animation:shake .4s ease}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+
+    /* ========== METEORS ========== */
+    .meteor-wrapper{display:flex;flex-direction:column;align-items:center;gap:14px}
+    .meteor-hud{display:flex;justify-content:space-around;align-items:center;width:100%;max-width:600px;padding:12px 16px;background:white;border-radius:12px;border:1.5px solid var(--border);box-shadow:var(--shadow)}
+    .meteor-hud-item{text-align:center}
+    .meteor-hud-val{font-family:'Shippori Mincho',serif;font-size:1.4rem;font-weight:700;color:var(--ink)}
+    .meteor-hud-label{font-size:.62rem;color:var(--mist);letter-spacing:2px;text-transform:uppercase}
+    #meteor-game-container{position:relative;width:100%;max-width:600px;height:55vh;background:radial-gradient(ellipse at 30% 70%,rgba(26,16,8,.95) 0%,transparent 70%),radial-gradient(ellipse at 70% 30%,rgba(60,20,10,.9) 0%,transparent 60%),linear-gradient(170deg,#0f0805 0%,#1a0f08 40%,#0a0505 100%);border-radius:18px;overflow:hidden;box-shadow:var(--shadow-lg),inset 0 0 80px rgba(0,0,0,.4);border:1.5px solid rgba(188,0,45,.2)}
+    .meteor{position:absolute;top:-60px;color:white;font-family:'Noto Sans JP',sans-serif;font-size:1.5rem;font-weight:700;width:56px;height:56px;display:flex;justify-content:center;align-items:center;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(255,120,50,1) 0%,rgba(188,0,45,.9) 60%,rgba(100,0,20,.8) 100%);box-shadow:0 0 20px rgba(188,0,45,.6),0 0 6px rgba(255,120,50,.8) inset;transition:top .08s linear}
+    .meteor::after{content:'';position:absolute;top:-32px;left:50%;transform:translateX(-50%);width:14px;height:36px;background:linear-gradient(to top,rgba(255,100,30,.7),transparent);border-radius:50% 50% 0 0;z-index:-1}
+
+    /* ========== SPEED RUN ========== */
+    .speedrun-wrapper{max-width:560px;margin:0 auto}
+    .speedrun-hud{display:flex;justify-content:space-around;padding:16px;background:white;border-radius:14px;border:1.5px solid var(--border);box-shadow:var(--shadow);margin-bottom:1.5rem}
+    .speed-timer-track{width:100%;height:8px;background:var(--washi);border-radius:4px;overflow:hidden;margin-bottom:1.5rem}
+    #speed-timer-bar{height:100%;background:linear-gradient(to right,var(--green),var(--gold),var(--red));border-radius:4px;transition:width 1s linear}
+    .speed-char-card{background:white;border-radius:18px;padding:2.5rem 2rem;border:1.5px solid var(--border);box-shadow:var(--shadow);text-align:center;margin-bottom:1.25rem;position:relative;overflow:hidden}
+    .speed-char-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(to right,var(--gold),transparent);opacity:.7}
+    #speed-char{font-family:'Noto Sans JP',sans-serif;font-size:6.5rem;line-height:1;color:var(--ink);transition:opacity .08s}
+    #speed-time{font-size:2.2rem;font-weight:700;font-family:'Shippori Mincho',serif;transition:color .3s}
+    #speed-correct{font-size:2.2rem;font-weight:700;font-family:'Shippori Mincho',serif;color:var(--green)}
+
+    /* ========== PAIRS ========== */
+    .pairs-wrapper{max-width:620px;margin:0 auto}
+    .pairs-header{text-align:center;margin-bottom:1.5rem}
+    .pairs-header h2{font-family:'Shippori Mincho',serif;font-size:1.5rem;font-weight:700}
+    .pairs-header p{color:var(--mist);font-size:.82rem;margin-top:.3rem;letter-spacing:1px}
+    .pairs-progress-bar-wrap{margin:.75rem auto;max-width:200px}
+    #pairs-progress{font-family:'DM Mono',monospace;font-size:.82rem;color:var(--mist);display:block;text-align:center;margin-bottom:.5rem}
+    #pairs-board{display:flex;gap:20px;justify-content:center;margin-top:1rem}
+    .pairs-col{display:flex;flex-direction:column;gap:10px}
+    .pairs-card{background:white;border:2px solid var(--border);border-radius:12px;padding:14px 18px;text-align:center;cursor:pointer;transition:all .2s;font-family:'Noto Sans JP',sans-serif;min-width:100px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+    .pairs-card.kana-type{font-size:1.8rem;color:var(--ink)}
+    .pairs-card.romaji-type{font-family:'DM Mono',monospace;font-size:1rem;color:var(--ink-soft);letter-spacing:1px}
+    .pairs-card:hover:not(.matched):not(.selected){border-color:var(--red);transform:scale(1.04)}
+    .pairs-card.selected{border-color:var(--red);background:var(--red-pale);box-shadow:0 0 0 3px rgba(188,0,45,.12)}
+    .pairs-card.matched{border-color:var(--green);background:var(--green-pale);color:var(--green);cursor:default;opacity:.7}
+    .pairs-card.matched::after{content:'✓';position:absolute;top:4px;right:6px;font-size:.7rem;color:var(--green)}
+    @media(max-width:480px){#pairs-board{flex-direction:column;align-items:center}.pairs-col{flex-direction:row;flex-wrap:wrap;justify-content:center}}
+
+    /* ========== BOSS ========== */
+    #boss-container{text-align:center;padding:2rem;background:white;border-radius:18px;border:1.5px solid var(--border);box-shadow:var(--shadow-lg)}
+    .boss-title{font-family:'Shippori Mincho',serif;font-size:1.6rem;font-weight:800;color:var(--red);margin-bottom:1.25rem;letter-spacing:2px}
+    .boss-hp-track{width:100%;height:16px;background:var(--washi);border-radius:8px;overflow:hidden;margin-bottom:.75rem;border:1px solid var(--border)}
+    #boss-hp-fill{height:100%;background:linear-gradient(to right,var(--red-dark),var(--red));border-radius:8px;transition:width .4s cubic-bezier(.16,1,.3,1);box-shadow:0 0 8px rgba(188,0,45,.4)}
+    .boss-timer-track{width:100%;height:4px;background:var(--washi);border-radius:2px;margin-bottom:1.5rem;overflow:hidden}
+    #boss-timer-bar{height:100%;background:var(--gold);border-radius:2px;width:100%}
+    #boss-char{font-family:'Noto Sans JP',sans-serif;font-size:6.5rem;color:var(--ink);margin-bottom:1.25rem;line-height:1;transition:opacity .1s;filter:drop-shadow(0 2px 8px rgba(26,16,8,.1))}
+
+    /* ========== THEORY ========== */
+    .theory-header{text-align:center;margin-bottom:2rem}
+    .theory-header h1{font-family:'Shippori Mincho',serif;font-size:1.7rem;font-weight:700}
+    .theory-header p{color:var(--mist);font-size:.82rem;margin-top:.4rem;letter-spacing:1px}
+    .theory-tabs{display:flex;justify-content:center;gap:0;margin-bottom:2rem}
+    .tab-btn{background:white;border:1.5px solid var(--border);padding:.6rem 1.75rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-size:.82rem;font-weight:700;transition:all .2s;color:var(--mist)}
+    .tab-btn:first-child{border-radius:8px 0 0 8px}
+    .tab-btn:last-child{border-radius:0 8px 8px 0;border-left:none}
+    .tab-btn.active{background:var(--red);color:white;border-color:var(--red)}
+    .kana-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;max-width:540px;margin:0 auto}
+    .kana-box{background:white;border:1.5px solid var(--border);border-radius:10px;padding:12px 4px;text-align:center;cursor:pointer;transition:all .2s;box-shadow:var(--shadow)}
+    .kana-box:hover{border-color:var(--red);transform:scale(1.06);box-shadow:0 6px 20px rgba(188,0,45,.12);background:var(--red-pale)}
+    .kana-box .kan{font-family:'Noto Sans JP',sans-serif;font-size:1.9rem;color:var(--ink);line-height:1.2}
+    .kana-box .rom{font-family:'DM Mono',monospace;font-size:.68rem;color:var(--mist);margin-top:2px}
+
+    /* LEADERBOARD */
+    .leaderboard-container{background:white;border-radius:14px;padding:1.75rem;border:1.5px solid var(--border);box-shadow:var(--shadow);max-width:480px;margin:0 auto}
+    .leaderboard-list{list-style:none;padding:0}
+    .leaderboard-list li{display:flex;justify-content:space-between;align-items:center;padding:12px 8px;border-bottom:1px solid var(--washi);font-size:.9rem;transition:background .2s}
+    .leaderboard-list li:last-child{border-bottom:none}
+    .leaderboard-list li:hover{background:var(--washi);border-radius:8px}
+    .leaderboard-list li:nth-child(1){font-family:'Shippori Mincho',serif;font-weight:800;color:var(--gold);font-size:1.05rem}
+    .leaderboard-list li:nth-child(2){font-family:'Shippori Mincho',serif;font-weight:700;color:#888}
+    .leaderboard-list li:nth-child(3){font-family:'Shippori Mincho',serif;font-weight:700;color:#a0522d}
+
+    /* VOCAB */
+    #vocab-card{background:white;border-radius:18px;padding:2.5rem 2rem;border:1.5px solid var(--border);box-shadow:var(--shadow);text-align:center;position:relative;overflow:hidden}
+    #vocab-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(to right,var(--gold),transparent);opacity:.7}
+
+    /* TOAST & MODAL */
+    .toast{position:fixed;bottom:24px;right:24px;background:white;border-left:4px solid var(--gold);border-radius:12px;box-shadow:0 12px 40px rgba(26,16,8,.15);padding:12px 18px;display:flex;align-items:center;gap:12px;z-index:1000;animation:toastIn .5s cubic-bezier(.175,.885,.32,1.275);max-width:300px}
+    .toast-icon{font-size:1.7rem}
+    .toast h4{margin:0 0 2px;font-size:.7rem;text-transform:uppercase;letter-spacing:2px;color:var(--mist)}
+    .toast p{margin:0;font-weight:700;color:var(--gold);font-family:'Shippori Mincho',serif}
+    @keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+    .modal-overlay{position:fixed;inset:0;background:rgba(26,16,8,.5);backdrop-filter:blur(4px);z-index:2000;display:flex;align-items:center;justify-content:center;animation:inkFadeIn .2s ease}
+    .modal-box{background:var(--paper);border-radius:18px;padding:2.25rem 1.75rem;max-width:400px;width:90%;text-align:center;box-shadow:0 24px 80px rgba(26,16,8,.25);border:1.5px solid var(--border);animation:modalPop .3s cubic-bezier(.175,.885,.32,1.275);position:relative;overflow:hidden}
+    .modal-box::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:var(--red)}
+    @keyframes modalPop{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+    .modal-icon{font-size:3rem;margin-bottom:.85rem}
+    .modal-box h2{font-family:'Shippori Mincho',serif;font-size:1.4rem;font-weight:700;margin-bottom:.65rem}
+    .modal-box p{color:var(--ink-soft);margin-bottom:1.25rem;line-height:1.6;font-size:.92rem}
+    #chart-overlay .modal-box{max-width:640px;width:95%}
+    .chart-tab-btn{background:white;border:1.5px solid var(--border);color:var(--mist);padding:.45rem 1rem;font-size:.78rem;cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-weight:700;transition:all .2s}
+    .chart-tab-btn:first-child{border-radius:8px 0 0 8px}
+    .chart-tab-btn:last-child{border-radius:0 8px 8px 0;border-left:none}
+    .chart-tab-btn.active{background:var(--red-pale);border-color:var(--red);color:var(--red)}
+
+    /* PWA */
+    .pwa-banner{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:500;background:white;border:1.5px solid var(--border);border-top:3px solid var(--red);border-radius:14px;padding:.9rem 1.4rem;align-items:center;gap:14px;box-shadow:var(--shadow-lg);max-width:380px;width:90%;animation:pwaUp .4s cubic-bezier(.16,1,.3,1)}
+    @keyframes pwaUp{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    .pwa-icon{font-size:1.7rem}
+    .pwa-text strong{display:block;font-size:.85rem;color:var(--ink);font-weight:700}
+    .pwa-text span{font-size:.75rem;color:var(--mist)}
+    .pwa-install{background:var(--red);color:white;border:none;padding:.55rem 1rem;border-radius:8px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;white-space:nowrap;transition:background .2s}
+    .pwa-install:hover{background:var(--red-dark)}
+    .pwa-dismiss{background:none;border:none;color:var(--mist);cursor:pointer;font-size:1.1rem}
+
+    /* FOOTER */
+    .site-footer{background:var(--washi);border-top:1px solid var(--border);padding:1.25rem 5%;text-align:center}
+    .footer-inner{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:3px;align-items:center}
+    .footer-logo{font-family:'Shippori Mincho',serif;font-size:.95rem;font-weight:800;letter-spacing:3px;color:var(--ink)}
+    .footer-logo span{color:var(--red)}
+    .footer-desc,.footer-copy{font-size:.75rem;color:var(--mist)}
+    .footer-copy a{color:var(--mist)}
+
+    .top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px}
+    .game-wrapper{margin:0 auto;width:100%}
+
+    @media(max-width:480px){
+        .path-node:nth-child(even),.path-node:nth-child(odd){align-self:center}
+        .learning-path::before{display:none}
+        #char-display{font-size:5rem}
+        #speed-char{font-size:5rem}
+        #boss-char{font-size:5rem}
+        .diff-grid{grid-template-columns:1fr 1fr}
+    }
+
+    /* MODULE CARDS */
+    .module-cards{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:2rem;}
+    .module-card{background:white;border:1.5px solid var(--border);border-radius:14px;padding:1.25rem;cursor:pointer;transition:all .25s;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+    .module-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--border);transition:background .25s;}
+    .module-card:hover{border-color:var(--red);transform:translateY(-3px);box-shadow:var(--shadow-lg);}
+    .module-card:hover::before{background:var(--red);}
+    .module-card.live-card:hover{border-color:var(--green);}
+    .module-card.live-card:hover::before{background:var(--green);}
+    .module-card-icon{font-size:2rem;flex-shrink:0;}
+    .module-card-title{font-family:'Shippori Mincho',serif;font-size:1rem;font-weight:700;color:var(--ink);margin-bottom:2px;}
+    .module-card-sub{font-size:.75rem;color:var(--mist);letter-spacing:.5px;}
+
+    /* ===== LIVE DASHBOARD ===== */
+    .live-wrapper{max-width:800px;margin:0 auto;display:flex;flex-direction:column;gap:1.5rem;}
+    .live-header{display:flex;align-items:center;gap:12px;margin-bottom:.5rem;}
+    .live-title{font-family:'Shippori Mincho',serif;font-size:1.6rem;font-weight:700;color:var(--ink);}
+    .live-pulse-dot{width:10px;height:10px;background:var(--green);border-radius:50%;box-shadow:0 0 0 0 rgba(45,158,90,.4);animation:livePulse 2s infinite;flex-shrink:0;}
+    @keyframes livePulse{0%{box-shadow:0 0 0 0 rgba(45,158,90,.4);}70%{box-shadow:0 0 0 10px rgba(45,158,90,0);}100%{box-shadow:0 0 0 0 rgba(45,158,90,0);}}
+
+    .live-counters{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+    @media(max-width:600px){.live-counters{grid-template-columns:repeat(2,1fr);}}
+    .live-counter-card{background:white;border:1.5px solid var(--border);border-radius:14px;padding:1.25rem 1rem;text-align:center;box-shadow:var(--shadow);transition:transform .2s;}
+    .live-counter-card:hover{transform:translateY(-3px);}
+    .live-counter-val{font-family:'Shippori Mincho',serif;font-size:2rem;font-weight:700;color:var(--ink);line-height:1;margin-bottom:6px;}
+    .live-counter-label{font-size:.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--mist);}
+
+    .live-chart-card{background:white;border:1.5px solid var(--border);border-radius:14px;padding:1.5rem;box-shadow:var(--shadow);}
+    .live-chart-label{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--mist);margin-bottom:1rem;}
+
+    .live-feed-card{background:white;border:1.5px solid var(--border);border-radius:14px;padding:1.5rem;box-shadow:var(--shadow);}
+    .live-feed-label{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:var(--mist);margin-bottom:1rem;font-weight:700;}
+    .live-feed-list{list-style:none;padding:0;display:flex;flex-direction:column;}
+    .live-feed-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--washi);font-size:.88rem;color:var(--ink-soft);}
+    .live-feed-item:last-child{border-bottom:none;}
+    .live-feed-item .feed-icon{font-size:1.1rem;flex-shrink:0;}
+    .live-feed-item .feed-name{font-weight:700;color:var(--ink);}
+    .live-feed-item .feed-time{margin-left:auto;font-family:'DM Mono',monospace;font-size:.7rem;color:var(--mist);}
+    </style>
+</head>
+<body>
+
+<nav class="top-nav">
+    <a href="index.html" class="logo">KANA<span>SENSEI</span></a>
+    <div class="nav-right">
+        <div class="lang-toggle">
+            <button class="lang-toggle-btn active" data-lang="en" onclick="setLang('en')">EN</button>
+            <button class="lang-toggle-btn" data-lang="pl" onclick="setLang('pl')">PL</button>
+        </div>
+        <span id="user-streak">🔥 0</span>
+        <span id="user-points">0 XP</span>
+        <button id="auth-btn">Login</button>
+    </div>
+</nav>
+
+<!-- TOAST -->
+<div id="achievement-toast" class="toast hidden">
+    <div class="toast-icon">🏆</div>
+    <div><h4>Achievement</h4><p id="toast-text"></p></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div class="modal-icon" id="modal-icon">🎉</div>
+        <h2 id="modal-title"></h2>
+        <p id="modal-message"></p>
+        <button class="primary-btn" id="modal-btn">OK</button>
+    </div>
+</div>
+
+<!-- CHART MODAL -->
+<div id="chart-overlay" class="modal-overlay hidden">
+    <div class="modal-box">
+        <h2 style="font-family:'Shippori Mincho',serif;margin-bottom:.3rem;">📈 Progress</h2>
+        <p style="color:var(--mist);font-size:.78rem;margin-bottom:1.25rem;letter-spacing:1px;">LAST 7 SESSIONS</p>
+        <div style="display:flex;gap:0;margin-bottom:1.25rem;">
+            <button class="chart-tab-btn active" onclick="switchProgressChart('xp')">XP / session</button>
+            <button class="chart-tab-btn" onclick="switchProgressChart('kana')">Mastered kana</button>
+        </div>
+        <canvas id="progressChart" height="190"></canvas>
+        <button class="primary-btn" id="chart-close-btn" style="margin-top:1.25rem;width:100%;">Close</button>
+    </div>
+</div>
+
+<main id="app-container">
+
+    <!-- ===== DASHBOARD ===== -->
+    <section id="view-dashboard" class="view active">
+        <header class="dashboard-header">
+            <h1 data-i18n="welcome">稽古 — Training</h1>
+            <p data-i18n="welcomeSub">Choose a level and sharpen your skills</p>
+            <div id="diff-badge" onclick="openDifficultyMenu(undefined)">Difficulty: Scholar</div>
+        </header>
+
+        <div id="srs-stats-container" class="srs-stats hidden">
+            <div class="stat-box box-new">
+                <span class="stat-num" id="stat-new">0</span>
+                <span class="stat-label" data-i18n="newLabel">New</span>
+            </div>
+            <div class="stat-box box-review">
+                <span class="stat-num" id="stat-review">0</span>
+                <span class="stat-label" data-i18n="reviewLabel">Reviews</span>
+            </div>
+            <div class="stat-box box-mastered">
+                <span class="stat-num" id="stat-mastered">0</span>
+                <span class="stat-label" data-i18n="masteredLabel">Mastered</span>
+            </div>
+            <div class="stat-box box-chart" onclick="openProgressChart()">
+                <span class="stat-num" style="font-size:1.7rem;">📈</span>
+                <span class="stat-label" data-i18n="chartLabel">Progress</span>
+            </div>
+        </div>
+
+
+        
+        <!-- AI MODULE CARDS -->
+        <div class="module-cards">
+            <div class="module-card live-card" data-target="view-live">
+                <div class="module-card-icon">📡</div>
+                <div>
+                    <div class="module-card-title" data-i18n="liveBtn">Live Stats</div>
+                    <div class="module-card-sub" data-i18n="liveFeedLabel">⚡ Live Activity Feed</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="learning-path">
+            <div class="path-node unlocked" id="stage-1" onclick="startLevel(1)">
+                <div class="node-icon">あ</div>
+                <div class="node-text"><div class="node-title" data-i18n="level1">Hiragana Basics</div><div class="node-subtitle" data-i18n="level1sub">Level 1 · 15 characters</div></div>
+                <div class="node-arrow">→</div>
+            </div>
+            <div class="path-node locked" id="stage-2" onclick="startLevel(2)">
+                <div class="node-icon">☄️</div>
+                <div class="node-text"><div class="node-title" data-i18n="level2">Kana Meteors</div><div class="node-subtitle" data-i18n="level2sub">Level 2 · Arcade typing</div></div>
+                <div class="node-arrow">→</div>
+            </div>
+            <div class="path-node locked" id="stage-3" onclick="startLevel(3)">
+                <div class="node-icon">ば</div>
+                <div class="node-text"><div class="node-title" data-i18n="level3">Hiragana Dakuten</div><div class="node-subtitle" data-i18n="level3sub">Level 3 · 25 characters</div></div>
+                <div class="node-arrow">→</div>
+            </div>
+            <div class="path-node locked" id="stage-4" onclick="startLevel(4)">
+                <div class="node-icon">👹</div>
+                <div class="node-text"><div class="node-title" data-i18n="level4">Boss: Yokai Demon</div><div class="node-subtitle" data-i18n="level4sub">Level 4 · Final battle</div></div>
+                <div class="node-arrow">→</div>
+            </div>
+            <div class="path-node locked" id="stage-5" onclick="startLevel(5)">
+                <div class="node-icon">ア</div>
+                <div class="node-text"><div class="node-title" data-i18n="level5">Katakana Basics</div><div class="node-subtitle" data-i18n="level5sub">Level 5 · 15 characters</div></div>
+                <div class="node-arrow">→</div>
+            </div>
+            <div class="path-node locked" id="stage-6" onclick="startLevel(6)">
+                <div class="node-icon">カ</div>
+                <div class="node-text"><div class="node-title" data-i18n="level6">Katakana Full</div><div class="node-subtitle" data-i18n="level6sub">Level 6 · All 46 characters</div></div>
+                <div class="node-arrow">→</div>
+            </div>
+            <div class="path-node locked" id="stage-7" onclick="startLevel(7)">
+                <div class="node-icon">⚡</div>
+                <div class="node-text"><div class="node-title" data-i18n="level7">Speed Run</div><div class="node-subtitle" data-i18n="level7sub">Level 7 · 60 seconds</div></div>
+                <div class="node-arrow">→</div>
+            </div>
+            <div class="path-node locked" id="stage-8" onclick="startLevel(8)">
+                <div class="node-icon">🀄</div>
+                <div class="node-text"><div class="node-title" data-i18n="level8">Kana Pairs</div><div class="node-subtitle" data-i18n="level8sub">Level 8 · Match the kana</div></div>
+                <div class="node-arrow">→</div>
+            </div>
+        </div>
+
+        <div class="achievements-section">
+            <h3 data-i18n="achievements">Achievements</h3>
+            <div class="badges-container">
+                <div class="badge locked" id="badge-first">
+                    <div class="badge-icon">🔰</div>
+                    <p data-i18n="badge1">First Blood<br><span data-i18n="badge1sub">Start learning</span></p>
+                </div>
+                <div class="badge locked" id="badge-combo">
+                    <div class="badge-icon">🔥</div>
+                    <p data-i18n="badge2">Focus Master<br><span data-i18n="badge2sub">Combo ×5</span></p>
+                </div>
+                <div class="badge locked" id="badge-vocab">
+                    <div class="badge-icon">⛩️</div>
+                    <p data-i18n="badge3">Word Samurai<br><span data-i18n="badge3sub">Unlock Vocabulary</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <div class="about-flag">🇯🇵</div>
+            <h2 data-i18n="about">About This Project</h2>
+            <p data-i18n="aboutText"></p>
+            <div class="about-features">
+                <div class="about-feat"><span>🧠</span><strong>SRS Engine</strong>Smart intervals</div>
+                <div class="about-feat"><span>☄️</span><strong>Meteor Game</strong>Typing challenge</div>
+                <div class="about-feat"><span>⚡</span><strong>Speed Run</strong>60 sec sprint</div>
+                <div class="about-feat"><span>🀄</span><strong>Pairs</strong>Match & learn</div>
+            </div>
+            <div class="about-links">
+                <a href="index.html" class="about-link">🎌 Landing Page</a>
+                <a href="https://github.com/" target="_blank" class="about-link">⌨️ GitHub</a>
+                <a href="https://www.mext.go.jp/en/" target="_blank" class="about-link">🎓 MEXT</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== DIFFICULTY ===== -->
+    <section id="view-difficulty" class="view hidden">
+        <button class="back-btn" data-target="view-dashboard">Back</button>
+        <div class="diff-header">
+            <h1 data-i18n="diffTitle">Select Difficulty</h1>
+            <p data-i18n="diffSub">This applies to all training modes</p>
+        </div>
+        <div class="diff-grid">
+            <div class="diff-card diff-badge-d1 selected" onclick="setDifficulty(1)">
+                <div class="diff-emoji">📖</div>
+                <div class="diff-name" data-i18n="diff1">Scholar</div>
+                <div class="diff-desc" data-i18n="diff1desc">No time limit · Unlimited retries · Full hints</div>
+            </div>
+            <div class="diff-card diff-badge-d2" onclick="setDifficulty(2)">
+                <div class="diff-emoji">⚔️</div>
+                <div class="diff-name" data-i18n="diff2">Samurai</div>
+                <div class="diff-desc" data-i18n="diff2desc">5s timer per answer · 1 retry · No hints</div>
+            </div>
+            <div class="diff-card diff-badge-d3" onclick="setDifficulty(3)">
+                <div class="diff-emoji">🔥</div>
+                <div class="diff-name" data-i18n="diff3">Demon</div>
+                <div class="diff-desc" data-i18n="diff3desc">3s timer · No retries · Wrong answer penalises score</div>
+            </div>
+            <div class="diff-card diff-badge-d4" onclick="setDifficulty(4)">
+                <div class="diff-emoji">👹</div>
+                <div class="diff-name" data-i18n="diff4">Oni Lord</div>
+                <div class="diff-desc" data-i18n="diff4desc">2s timer · Random decoys · Life drain on error</div>
+            </div>
+        </div>
+        <div style="text-align:center;">
+            <button class="primary-btn" onclick="confirmDifficulty()" data-i18n="applyDiff">Start Training</button>
+        </div>
+    </section>
+
+    <!-- ===== TRAINING ARENA ===== -->
+    <section id="view-game" class="view hidden">
+        <button class="back-btn" data-target="view-dashboard" data-i18n="interruptBtn">Interrupt training</button>
+        <div class="game-wrapper">
+            <div class="game-header">
+                <span class="game-title" data-i18n="arenaTitle">稽古 · Training Arena</span>
+                <span id="combo-display" class="combo-badge" style="display:none"></span>
+                <span class="session-score" data-i18n="sessionXP">Session XP: <span id="score-val">0</span></span>
+            </div>
+            <div class="timer-track"><div id="timer-bar"></div></div>
+            <div class="game-flex-container">
+                <div class="kana-panel">
+                    <h1 id="char-display">?</h1>
+                    <span class="kana-hint" data-i18n="hint">Type romaji + Enter</span>
+                    <input type="text" id="answer-input" data-i18n="hint" autocomplete="off" spellcheck="false">
+                </div>
+                <div class="canvas-panel">
+                    <span class="canvas-label" data-i18n="shodoCTA">書道 · Shodō</span>
+                    <canvas id="shodo-canvas" width="200" height="200"></canvas>
+                    <button id="clear-canvas" class="secondary-btn" style="width:100%;" data-i18n="clearCanvas">Clear</button>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== METEORS ===== -->
+    <div id="view-meteors" class="view hidden">
+        <div class="top-bar">
+            <button class="back-btn" data-target="view-dashboard" onclick="stopMeteors()" data-i18n="backBtn">Back</button>
+            <h2 style="font-family:'Shippori Mincho',serif;" data-i18n="meteorTitle">Kana Meteors ☄️</h2>
+        </div>
+        <div class="meteor-wrapper">
+            <div class="meteor-hud">
+                <div class="meteor-hud-item">
+                    <div class="meteor-hud-val" id="meteor-score">0</div>
+                    <div class="meteor-hud-label" data-i18n="meteorPts">Points</div>
+                </div>
+                <div class="meteor-hud-item" id="meteor-lives-hud">
+                    <div class="meteor-hud-val">❤️❤️❤️</div>
+                    <div class="meteor-hud-label" data-i18n="meteorLives">Lives</div>
+                </div>
+                <div class="meteor-hud-item" id="meteor-speed-hud">
+                    <div class="meteor-hud-val" style="font-size:1rem;color:var(--mist);">×2.0</div>
+                    <div class="meteor-hud-label" data-i18n="meteorSpeed">Speed</div>
+                </div>
+            </div>
+            <div id="meteor-game-container"></div>
+            <input type="text" id="meteor-input" autocomplete="off" spellcheck="false" placeholder="romaji → Enter">
+        </div>
+    </div>
+
+    <!-- ===== SPEED RUN ===== -->
+    <section id="view-speedrun" class="view hidden">
+        <button class="back-btn" data-target="view-dashboard" data-i18n="backBtn">Back</button>
+        <div class="speedrun-wrapper">
+            <div class="game-header" style="margin-bottom:1.25rem;">
+                <span class="game-title" data-i18n="speedTitle">Speed Run ⚡</span>
+            </div>
+            <div class="speed-timer-track"><div id="speed-timer-bar"></div></div>
+            <div class="speedrun-hud">
+                <div class="meteor-hud-item">
+                    <div id="speed-time" class="meteor-hud-val" style="font-size:2rem;">60</div>
+                    <div class="meteor-hud-label" data-i18n="timeLeft">Time left</div>
+                </div>
+                <div class="meteor-hud-item">
+                    <div id="speed-correct" class="meteor-hud-val" style="font-size:2rem;color:var(--green);">0</div>
+                    <div class="meteor-hud-label" data-i18n="correct">Correct</div>
+                </div>
+            </div>
+            <div class="speed-char-card">
+                <div id="speed-char" style="font-size:6.5rem;font-family:'Noto Sans JP',sans-serif;line-height:1;color:var(--ink);transition:opacity .08s;">?</div>
+            </div>
+            <input type="text" id="speed-input" autocomplete="off" spellcheck="false" placeholder="romaji → Enter">
+        </div>
+    </section>
+
+    <!-- ===== PAIRS ===== -->
+    <section id="view-pairs" class="view hidden">
+        <button class="back-btn" data-target="view-dashboard" data-i18n="backBtn">Back</button>
+        <div class="pairs-wrapper">
+            <div class="pairs-header">
+                <h2 data-i18n="pairsTitle">Kana Pairs</h2>
+                <p data-i18n="pairsSub">Match the kana to its romaji</p>
+                <span id="pairs-progress" style="font-family:'DM Mono',monospace;font-size:.82rem;color:var(--mist);display:block;margin-top:.5rem;"></span>
+            </div>
+            <div id="pairs-board"></div>
+        </div>
+    </section>
+
+    <!-- ===== THEORY ===== -->
+    <section id="view-theory" class="view hidden">
+        <button class="back-btn" data-target="view-dashboard" data-i18n="backBtn">Back</button>
+        <div class="theory-header">
+            <h1 data-i18n="kanaTableTitle">五十音 · Kana Tables</h1>
+            <p data-i18n="kanaTableSub">Click a character to hear pronunciation</p>
+        </div>
+        <div class="theory-tabs">
+            <button id="tab-hiragana" class="tab-btn active">Hiragana</button>
+            <button id="tab-katakana" class="tab-btn">Katakana</button>
+        </div>
+        <div id="kana-table-container" class="kana-grid"></div>
+    </section>
+
+    <!-- ===== LEADERBOARD ===== -->
+    <section id="view-leaderboard" class="view hidden">
+        <button class="back-btn" data-target="view-dashboard" data-i18n="backBtn">Back</button>
+        <div style="text-align:center;margin-bottom:2rem;">
+            <h1 style="font-family:'Shippori Mincho',serif;font-size:1.7rem;" data-i18n="topTitle">番付 · Top 10</h1>
+            <p style="color:var(--mist);font-size:.82rem;margin-top:.4rem;letter-spacing:1px;" data-i18n="topSub">Best players in Firebase</p>
+        </div>
+        <div class="leaderboard-container">
+            <ol id="leaderboard-list" class="leaderboard-list"><li>Loading...</li></ol>
+        </div>
+    </section>
+
+    <!-- ===== VOCABULARY ===== -->
+    <section id="view-vocabulary" class="view hidden">
+        <button class="back-btn" data-target="view-dashboard" data-i18n="backBtn">Back</button>
+        <div class="game-wrapper">
+            <div class="game-header">
+                <span class="game-title" data-i18n="vocabTitle">語彙 · Vocabulary</span>
+                <span class="session-score">XP: <span id="vocab-score-val">0</span></span>
+            </div>
+            <div id="vocab-card">
+                <p id="vocab-pl" style="font-size:.78rem;color:var(--mist);margin-bottom:.65rem;text-transform:uppercase;letter-spacing:3px;font-family:'DM Mono',monospace;">Translation</p>
+                <h1 id="vocab-display" style="font-family:'Noto Sans JP',sans-serif;font-size:3.5rem;margin-bottom:1.75rem;color:var(--ink);">?</h1>
+                <input type="text" id="vocab-input" autocomplete="off" spellcheck="false" placeholder="romaji...">
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== BOSS ===== -->
+    <div id="view-boss" class="view hidden"></div>
+
+
+    
+
+    <!-- ===== LIVE DASHBOARD ===== -->
+    <section id="view-live" class="view hidden">
+        <button class="back-btn" data-target="view-dashboard">Back</button>
+        <div class="live-wrapper">
+            <div class="live-header">
+                <h2 class="live-title" data-i18n="liveTitle">Live Global Stats</h2>
+                <div class="live-pulse-dot"></div>
+            </div>
+            <div class="live-counters">
+                <div class="live-counter-card">
+                    <div class="live-counter-val" id="live-active">—</div>
+                    <div class="live-counter-label" data-i18n="liveActive">Active now</div>
+                </div>
+                <div class="live-counter-card">
+                    <div class="live-counter-val" id="live-total">—</div>
+                    <div class="live-counter-label" data-i18n="liveTotal">Total learners</div>
+                </div>
+                <div class="live-counter-card">
+                    <div class="live-counter-val" id="live-mastered">—</div>
+                    <div class="live-counter-label" data-i18n="liveMastered">Kana mastered globally</div>
+                </div>
+                <div class="live-counter-card">
+                    <div class="live-counter-val" id="live-top">—</div>
+                    <div class="live-counter-label" data-i18n="liveTop">Top score</div>
+                </div>
+            </div>
+            <div class="live-chart-card">
+                <div class="live-chart-label" data-i18n="liveChartLabel">Your XP — last 7 days</div>
+                <canvas id="liveChart" height="180"></canvas>
+            </div>
+            <div class="live-feed-card">
+                <div class="live-feed-label" data-i18n="liveFeedLabel">⚡ Live Activity Feed</div>
+                <ul class="live-feed-list" id="live-feed-list">
+                    <li class="live-feed-item" style="color:var(--mist)">Waiting for activity...</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer class="site-footer">
+    <div class="footer-inner">
+        <span class="footer-logo">KANA<span>SENSEI</span></span>
+        <span class="footer-desc" id="footer-desc">Educational project · MEXT Scholarship 2028 · Wiktor Waryszak</span>
+        <span class="footer-copy">© 2026 — <a href="index.html">About</a></span>
+    </div>
+</footer>
+
+<div class="pwa-banner" id="pwa-banner">
+    <div class="pwa-icon">📱</div>
+    <div class="pwa-text"><strong>Install KanaSensei</strong><span>Works offline</span></div>
+    <button class="pwa-install" id="pwa-install-btn">Install</button>
+    <button class="pwa-dismiss" id="pwa-dismiss-btn">✕</button>
+</div>
+
+<script type="module" src="js/main.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js').catch(()=>{}));
+}
+
+// PWA
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); deferredPrompt = e;
+    setTimeout(() => { document.getElementById('pwa-banner').style.display = 'flex'; }, 5000);
+});
+document.getElementById('pwa-install-btn').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt(); await deferredPrompt.userChoice;
+    deferredPrompt = null; document.getElementById('pwa-banner').style.display = 'none';
+});
+document.getElementById('pwa-dismiss-btn').addEventListener('click', () => {
+    document.getElementById('pwa-banner').style.display = 'none';
+});
+
+// Progress chart
+let progressChart = null;
+window.openProgressChart = function() {
+    document.getElementById('chart-overlay').classList.remove('hidden');
+    if (!progressChart) {
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        progressChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'XP', data: [], borderColor: '#bc002d',
+                backgroundColor: (c) => { const g = c.chart.ctx.createLinearGradient(0,0,0,190); g.addColorStop(0,'rgba(188,0,45,.12)'); g.addColorStop(1,'rgba(188,0,45,0)'); return g; },
+                fill: true, tension: 0.4, pointBackgroundColor: '#bc002d', pointRadius: 5, pointHoverRadius: 8, borderWidth: 2.5 }] },
+            options: { responsive: true, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(250,246,239,.98)', titleColor: '#1a1008', bodyColor: '#888', borderColor: '#d4c9b0', borderWidth: 1, padding: 10, cornerRadius: 8 } },
+                scales: { x: { grid: { color: 'rgba(26,16,8,.05)' }, ticks: { color: '#c8bfaa' } }, y: { grid: { color: 'rgba(26,16,8,.05)' }, ticks: { color: '#c8bfaa' }, beginAtZero: true } } }
+        });
+    }
+    const sessions = JSON.parse(localStorage.getItem('ks_sessions') || '[]');
+    updateChart(sessions, 'xp');
+};
+
+function updateChart(sessions, type) {
+    if (!progressChart) return;
+    const days = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+    const labels = [], data = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(today); d.setDate(today.getDate() - i);
+        labels.push(days[d.getDay()]);
+        const s = sessions.find(x => x.date === d.toISOString().split('T')[0]);
+        data.push(s ? (type === 'xp' ? s.xp : s.mastered) : 0);
+    }
+    progressChart.data.labels = labels;
+    progressChart.data.datasets[0].data = data;
+    progressChart.update();
+}
+
+window.switchProgressChart = function(type) {
+    document.querySelectorAll('.chart-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[onclick="switchProgressChart('${type}')"]`).classList.add('active');
+    const sessions = JSON.parse(localStorage.getItem('ks_sessions') || '[]');
+    updateChart(sessions, type);
+};
+document.getElementById('chart-close-btn').addEventListener('click', () => {
+    document.getElementById('chart-overlay').classList.add('hidden');
+});
+</script>
+</body>
+</html>
