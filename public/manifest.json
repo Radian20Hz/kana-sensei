@@ -1,0 +1,26 @@
+{
+  "name": "KanaSensei — Learn Japanese Kana",
+  "short_name": "KanaSensei",
+  "description": "Learn hiragana & katakana with Spaced Repetition, arcade games and a live global leaderboard. MEXT Scholarship project by Wiktor Waryszak.",
+  "start_url": "/app.html",
+  "display": "standalone",
+  "background_color": "#faf6ef",
+  "theme_color": "#bc002d",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "categories": ["education", "games"],
+  "icons": [
+    {
+      "src": "img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
