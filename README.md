@@ -133,7 +133,7 @@ public/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/kanasensei.git
+git clone https://github.com/Radian20Hz/kana-sensei.git
 cd kanasensei
 
 # 2. Add your Firebase credentials
